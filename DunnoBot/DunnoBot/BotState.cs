@@ -68,6 +68,7 @@ public class BotState
                 ChatId = msg.Chat?.Id,
                 FirstName = msg.From.FirstName,
                 LastName = msg.From.LastName,
+                Username = msg.From.Username
             };
             _dbContext.Users.Add(author);
         }
