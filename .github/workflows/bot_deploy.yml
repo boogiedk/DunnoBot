@@ -13,11 +13,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up SSH key
-      run: |
-        echo "${{ secrets.DEPLOY_KEY }}" > private_key
-        chmod 600 private_key
-
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
@@ -33,17 +28,26 @@ jobs:
         context: ./DunnoBot
         dockerfile: ./DunnoBot/Dockerfile
         push: true
-        tags: boogiedk/dunnobot:latest
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/dunnobot:latest
 
     - name: Install Expect
       run: sudo apt-get install -y expect
 
     - name: Deploy to server
+      env:
+        VPS_HOST: ${{ secrets.DEPLOY_HOST }}
+        VPS_USER: ${{ secrets.DEPLOY_USER }}
+        VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+        VPS_SSH_PRIVATE_KEY_PASSPHRASE: ${{ secrets.VPS_SSH_PRIVATE_KEY_PASSPHRASE }}
       run: |
-        echo "${{ secrets.DEPLOY_KEY }}" > private_key
+        echo "${{ env.VPS_SSH_PRIVATE_KEY }}" > private_key
         chmod 600 private_key
         eval "$(ssh-agent -s)"
-        echo "${{ secrets.VPS_SSH_PRIVATE_KEY_PASSPHRASE }}" | expect -c "spawn ssh-add private_key; expect \"Enter passphrase:\"; send -- \"${{ secrets.VPS_SSH_PRIVATE_KEY_PASSPHRASE }}\r\"; expect eof"
+        echo "${{ env.VPS_SSH_PRIVATE_KEY_PASSPHRASE }}" | expect -c "spawn ssh-add private_key; expect \"Enter passphrase:\"; send -- \"${{ env.VPS_SSH_PRIVATE_KEY_PASSPHRASE }}\r\"; expect eof"
         rm -f private_key
-        echo 'DEPLOYING TO SERVER'
-        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'docker pull boogiedk/dunnobot:latest && docker stop dunnobot || true && docker rm dunnobot || true && docker run -d --name dunnobot --restart=always -e OPENAI_TOKEN=${{ secrets.OPENAI_TOKEN }} -e TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} -e DUNNOBOT_DB_PATH=${{ secrets.DUNNOBOT_DB_PATH }} -e TARGET_CHAT_ID=${{ secrets.TARGET_CHAT_ID }} -e BOT_ADMINS=${{ secrets.BOT_ADMINS }} boogiedk/dunnobot:latest'
+        ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ env.VPS_USER }}@${{ env.VPS_HOST }} <<-EOF
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/dunnobot:latest
+          docker stop dunnobot || true
+          docker rm dunnobot || true
+          docker run -d --name dunnobot --restart=always -e OPENAI_TOKEN=${{ secrets.OPENAI_TOKEN }} -e TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} -e DUNNOBOT_DB_PATH=${{ secrets.DUNNOBOT_DB_PATH }} -e TARGET_CHAT_ID=${{ secrets.TARGET_CHAT_ID }} -e BOT_ADMINS=${{ secrets.BOT_ADMINS }} ${{ secrets.DOCKER_HUB_USERNAME }}/dunnobot:latest
+        EOF
