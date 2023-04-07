@@ -30,8 +30,8 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
       with:
-        context: ./PetProject/DunnoBot/DunnoBot
-        dockerfile: ./PetProject/DunnoBot/DunnoBot/Dockerfile
+        context: ./DunnoBot
+        dockerfile: ./DunnoBot/Dockerfile
         push: true
         tags: boogiedk/dunnobot:latest
 
