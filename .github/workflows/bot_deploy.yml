@@ -30,12 +30,12 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v2
       with:
-        context: ./DunnoBot
-        dockerfile: ./DunnoBot/Dockerfile
+        context: ./PetProject/DunnoBot/DunnoBot
+        dockerfile: ./PetProject/DunnoBot/DunnoBot/Dockerfile
         push: true
         tags: boogiedk/dunnobot:latest
 
     - name: Deploy to server
       run: |
         echo 'DEPLOYING TO SERVER'
-        ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "docker pull boogiedk/dunnobot:latest && docker stop dunnobot || true && docker rm dunnobot || true && docker run -d --name dunnobot --restart=always -e OPENAI_TOKEN=${{ secrets.OPENAI_TOKEN }} -e TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} -e DUNNOBOT_DB_PATH=${{ secrets.DUNNOBOT_DB_PATH }} -e TARGET_CHAT_ID=${{ secrets.TARGET_CHAT_ID }} -e BOT_ADMINS=${{ secrets.BOT_ADMINS }} boogiedk/dunnobot:latest"
+        ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'docker pull boogiedk/dunnobot:latest && docker stop dunnobot || true && docker rm dunnobot || true && docker run -d --name dunnobot --restart=always -e OPENAI_TOKEN=${{ secrets.OPENAI_TOKEN }} -e TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }} -e DUNNOBOT_DB_PATH=${{ secrets.DUNNOBOT_DB_PATH }} -e TARGET_CHAT_ID=${{ secrets.TARGET_CHAT_ID }} -e BOT_ADMINS=${{ secrets.BOT_ADMINS }} boogiedk/dunnobot:latest'
